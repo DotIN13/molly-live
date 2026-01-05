@@ -8,10 +8,11 @@ const CARTESIA_API_KEY = process.env.CARTESIA_API_KEY;
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { ttsText, promptText, promptWavPath, stream, engine, voiceId } = body;
+        const { ttsText, promptText, promptWavPath, stream, engine, voiceId, cartesiaApiKey } = body;
 
         if (engine === 'cartesia') {
-            if (!CARTESIA_API_KEY) {
+            const apiKey = cartesiaApiKey || CARTESIA_API_KEY;
+            if (!apiKey) {
                 return NextResponse.json({ error: 'CARTESIA_API_KEY not configured' }, { status: 500 });
             }
             if (!ttsText) {
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
                 method: "POST",
                 headers: {
                     "Cartesia-Version": "2024-06-10",
-                    "X-API-Key": CARTESIA_API_KEY,
+                    "X-API-Key": apiKey,
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify(cartesiaBody)

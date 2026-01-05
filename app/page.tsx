@@ -23,7 +23,8 @@ import {
   Loader2,
   X,
   Moon,
-  Sun
+  Sun,
+  Plus
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/components/theme-provider";
@@ -223,7 +224,8 @@ async function playAudioStream(
     promptText?: string,
     promptWavPath?: string,
     voiceId?: string,
-    streaming: boolean
+    streaming: boolean,
+    cartesiaApiKey?: string
   }
 ) {
   stopAudioPlayback();
@@ -309,6 +311,10 @@ function VoiceSettingsModal({
   setCartesiaVoiceId,
   recognitionLang,
   setRecognitionLang,
+  cartesiaApiKey,
+  setCartesiaApiKey,
+  geminiApiKey,
+  setGeminiApiKey,
 }: {
   open: boolean;
   onClose: () => void;
@@ -337,6 +343,10 @@ function VoiceSettingsModal({
   setCartesiaVoiceId: (v: string) => void;
   recognitionLang: string;
   setRecognitionLang: (v: string) => void;
+  geminiApiKey: string;
+  setGeminiApiKey: (v: string) => void;
+  cartesiaApiKey: string;
+  setCartesiaApiKey: (v: string) => void;
 }) {
   const { theme, setTheme } = useTheme();
 
@@ -438,6 +448,21 @@ function VoiceSettingsModal({
                   </select>
                 </div>
 
+                {/* API Keys */}
+                <div className="space-y-3 rounded-2xl border bg-muted/50 p-3">
+                  <div className="font-medium">Gemini API Key</div>
+                  <div className="space-y-1">
+                    <Input
+                      value={geminiApiKey}
+                      onChange={e => setGeminiApiKey(e.target.value)}
+                      placeholder="Leave empty to use server settings"
+                      type="password"
+                      autoComplete="new-password"
+                      className="h-8 text-xs font-mono"
+                    />
+                  </div>
+                </div>
+
                 {/* TTS Engine Selection */}
                 <div className="space-y-3 rounded-2xl border bg-muted/50 p-3">
                   <div className="flex items-center justify-between">
@@ -505,6 +530,17 @@ function VoiceSettingsModal({
                       <div className="flex items-center justify-between">
                         <div className="text-xs text-muted-foreground">Stream Response</div>
                         <Switch checked={streamingEnabled} onCheckedChange={setStreamingEnabled} className="scale-75" />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-muted-foreground">Cartesia API Key</div>
+                        <Input
+                          value={cartesiaApiKey}
+                          onChange={e => setCartesiaApiKey(e.target.value)}
+                          placeholder="Leave empty to use server settings"
+                          type="password"
+                          autoComplete="new-password"
+                          className="h-8 text-xs font-mono"
+                        />
                       </div>
                       <div className="space-y-1">
                         <div className="text-xs text-muted-foreground">Voice ID</div>
@@ -589,7 +625,8 @@ function VoiceSettingsModal({
                           playAudioStream("Hi, I’m Molly. Checking my voice.", {
                             engine: 'cartesia',
                             voiceId: cartesiaVoiceId,
-                            streaming: streamingEnabled
+                            streaming: streamingEnabled,
+                            cartesiaApiKey
                           }).catch(err => console.error(err));
                         } else {
                           safeSpeakLegacy("Hi, I’m Molly.", {
@@ -631,15 +668,17 @@ function VoiceSettingsModal({
 }
 
 async function sendToBackend({
-  messages
+  messages,
+  geminiApiKey
 }: {
   messages: Array<{ role: string; content: string }>;
+  geminiApiKey?: string;
 }) {
   try {
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages })
+      body: JSON.stringify({ messages, geminiApiKey })
     });
     if (!response.ok) {
       throw new Error('API Error');
@@ -704,6 +743,8 @@ export default function Home() {
     "settings.recognitionLang",
     typeof navigator !== "undefined" ? navigator.language : "en-US"
   );
+  const [geminiApiKey, setGeminiApiKey] = usePersistentState("settings.geminiApiKey", "");
+  const [cartesiaApiKey, setCartesiaApiKey] = usePersistentState("settings.cartesiaApiKey", "");
 
   async function safeSpeak(
     text: string,
@@ -725,7 +766,7 @@ export default function Home() {
     if (ttsEngine === 'cartesia') {
       if (!cartesiaVoiceId) return;
       try {
-        await playAudioStream(text, { engine: 'cartesia', voiceId: cartesiaVoiceId, streaming: streamingEnabled });
+        await playAudioStream(text, { engine: 'cartesia', voiceId: cartesiaVoiceId, streaming: streamingEnabled, cartesiaApiKey });
       } catch (e) {
         console.error("Cartesia error:", e);
       }
@@ -897,7 +938,8 @@ export default function Home() {
 
     try {
       const payload = {
-        messages: [...messages, userMsg].map((m) => ({ role: m.role, content: m.content }))
+        messages: [...messages, userMsg].map((m) => ({ role: m.role, content: m.content })),
+        geminiApiKey
       };
 
       const res = await sendToBackend(payload);
@@ -938,6 +980,18 @@ export default function Home() {
     safeSpeak(msg.content, { rate, pitch, volume, voiceURI });
   }
 
+  function handleNewChat() {
+    stopSpeak();
+    setMessages([
+      {
+        id: String(Math.random()),
+        role: "assistant",
+        content: "Hi, I’m Molly. I’m here with you.",
+        meta: { ts: new Date(), tag: "Welcome" }
+      }
+    ]);
+  }
+
   useEffect(() => {
     if (!ttsEnabled) {
       stopSpeak();
@@ -961,10 +1015,16 @@ export default function Home() {
                 <div className="text-sm text-muted-foreground">Always online.</div>
               </div>
 
-              <Button variant="secondary" className="rounded-2xl" onClick={() => setSettingsOpen(true)}>
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="secondary" className="rounded-2xl" onClick={handleNewChat}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Chat
+                </Button>
+                <Button variant="secondary" className="rounded-2xl" onClick={() => setSettingsOpen(true)}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </Button>
+              </div>
             </div>
           </CardHeader>
 
@@ -1094,6 +1154,10 @@ export default function Home() {
         setPromptText={setPromptText}
         recognitionLang={recognitionLang}
         setRecognitionLang={setRecognitionLang}
+        geminiApiKey={geminiApiKey}
+        setGeminiApiKey={setGeminiApiKey}
+        cartesiaApiKey={cartesiaApiKey}
+        setCartesiaApiKey={setCartesiaApiKey}
       />
     </div>
   );

@@ -47,8 +47,8 @@ const SYSTEM_PROMPT = `
 
 export async function POST(req: NextRequest) {
     try {
-        const { messages } = await req.json();
-        const apiKey = process.env.GEMINI_API_KEY;
+        const { messages, geminiApiKey } = await req.json();
+        const apiKey = geminiApiKey || process.env.GEMINI_API_KEY;
 
         if (!apiKey) {
             return NextResponse.json({ error: 'GEMINI_API_KEY not configured' }, { status: 500 });
