@@ -946,7 +946,7 @@ export default function Home() {
   }, [ttsEnabled]);
 
   return (
-    <div className="h-screen w-full bg-gradient-to-b from-amber-50 via-rose-50 to-neutral-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 text-foreground flex flex-col overflow-hidden">
+    <div className="h-dvh w-full bg-gradient-to-b from-amber-50 via-rose-50 to-neutral-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 text-foreground flex flex-col overflow-hidden">
       <div className="mx-auto w-full max-w-3xl p-0 sm:p-4 flex-1 flex flex-col min-h-0">
         <Card className="rounded-none sm:rounded-3xl border-0 sm:border border-white/50 dark:border-border/50 bg-white/40 dark:bg-card/40 backdrop-blur shadow-none sm:shadow-lg flex-1 flex flex-col min-h-0">
           <CardHeader className="pb-3 flex-none">

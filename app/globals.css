@@ -130,6 +130,8 @@
 
   html,
   body {
+    height: 100%;
+    overscroll-behavior: none;
     user-select: none;
     scroll-behavior: smooth;
     -webkit-app-region: no-drag;
