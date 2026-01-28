@@ -176,7 +176,7 @@ export class CosyVoiceTTS implements TTSEngine {
                 const timeout = setTimeout(() => {
                     this.ws?.terminate();
                     resolve();
-                }, 5000);
+                }, 60000);
 
                 if (!this.ws) { clearTimeout(timeout); resolve(); return; }
 

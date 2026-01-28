@@ -17,8 +17,6 @@ export function VoiceSettingsModal({
     onClose,
     ttsEnabled,
     setTtsEnabled,
-    cosyEnabled,
-    setCosyEnabled,
     cosyVoiceId,
     setCosyVoiceId,
     ttsEngine,
@@ -36,8 +34,6 @@ export function VoiceSettingsModal({
     onClose: () => void;
     ttsEnabled: boolean;
     setTtsEnabled: (v: boolean) => void;
-    cosyEnabled: boolean;
-    setCosyEnabled: (v: boolean) => void;
     cosyVoiceId: string;
     setCosyVoiceId: (v: string) => void;
     ttsEngine: 'cosyvoice' | 'qwen';
@@ -205,17 +201,17 @@ export function VoiceSettingsModal({
 
                                     <div className="flex items-center gap-2">
                                         <Button
-                                            variant={cosyEnabled ? "default" : "outline"}
+                                            variant={ttsEngine === 'cosyvoice' ? "default" : "outline"}
                                             size="sm"
-                                            onClick={() => { setCosyEnabled(true); setTtsEngine('cosyvoice'); }}
+                                            onClick={() => { setTtsEngine('cosyvoice'); }}
                                             className="flex-1 rounded-xl text-xs"
                                         >
                                             CosyVoice
                                         </Button>
                                         <Button
-                                            variant={ttsEngine === 'qwen' && !cosyEnabled ? "default" : "outline"}
+                                            variant={ttsEngine === 'qwen' ? "default" : "outline"}
                                             size="sm"
-                                            onClick={() => { setCosyEnabled(false); setTtsEngine('qwen'); }}
+                                            onClick={() => { setTtsEngine('qwen'); }}
                                             className="flex-1 rounded-xl text-xs"
                                         >
                                             Aliyun Qwen
@@ -223,7 +219,7 @@ export function VoiceSettingsModal({
                                     </div>
 
                                     {/* CosyVoice Settings */}
-                                    {cosyEnabled && (
+                                    {ttsEngine === 'cosyvoice' && (
                                         <div className="space-y-3 pt-2">
                                             <div className="space-y-1">
                                                 <div className="text-xs text-muted-foreground">DashScope API Key</div>
@@ -250,7 +246,7 @@ export function VoiceSettingsModal({
 
 
                                     {/* Qwen Settings */}
-                                    {ttsEngine === 'qwen' && !cosyEnabled && (
+                                    {ttsEngine === 'qwen' && (
                                         <div className="space-y-3 pt-2">
                                             <div className="flex items-center justify-between">
                                             </div>
@@ -302,7 +298,7 @@ export function VoiceSettingsModal({
                                             variant="secondary"
                                             className="rounded-2xl flex-1"
                                             onClick={() => {
-                                                if (cosyEnabled) {
+                                                if (ttsEngine === 'cosyvoice') {
                                                     playAudioStream("Hi, I’m Molly.", {
                                                         engine: 'cosyvoice',
                                                         voiceId: cosyVoiceId,
@@ -318,7 +314,7 @@ export function VoiceSettingsModal({
                                                     }).catch(err => console.error(err));
                                                 }
                                             }}
-                                            disabled={(cosyEnabled && (!cosyVoiceId || !dashscopeApiKey)) || (ttsEngine === 'qwen' && (!qwenVoiceId || !dashscopeApiKey))}
+                                            disabled={(ttsEngine === 'cosyvoice' && (!cosyVoiceId || !dashscopeApiKey)) || (ttsEngine === 'qwen' && (!qwenVoiceId || !dashscopeApiKey))}
                                         >
                                             <Volume2 className="mr-2 h-4 w-4" />
                                             Preview

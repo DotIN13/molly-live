@@ -28,9 +28,7 @@ export default function Home() {
 
   const [ttsEnabled, setTtsEnabled] = usePersistentState("settings.ttsEnabled", true);
 
-  // Legacy TTS state removed (rate, pitch, volume, voiceURI, voices)
-
-  const [cosyEnabled, setCosyEnabled] = usePersistentState("settings.cosyEnabled", false);
+  // cosyEnabled removed
   const [ttsEngine, setTtsEngine] = usePersistentState<'cosyvoice' | 'qwen'>("settings.ttsEngine", 'qwen');
 
   const [cosyVoiceId, setCosyVoiceId] = usePersistentState("settings.cosyVoiceId", "longanyang");
@@ -44,7 +42,7 @@ export default function Home() {
   const [geminiApiKey, setGeminiApiKey] = usePersistentState("settings.geminiApiKey", "");
 
   async function safeSpeak(text: string) {
-    if (cosyEnabled) {
+    if (ttsEngine === 'cosyvoice') {
       if (!cosyVoiceId) {
         console.warn("CosyVoice enabled but missing Voice ID");
         return;
@@ -55,10 +53,7 @@ export default function Home() {
         console.error("CosyVoice error:", e);
       }
       return;
-    }
-
-
-    if (ttsEngine === 'qwen') {
+    } if (ttsEngine === 'qwen') {
       if (!dashscopeApiKey || !qwenVoiceId) {
         console.warn("Qwen TTS missing API Key or Voice ID");
         return;
@@ -207,7 +202,7 @@ export default function Home() {
         messages: [...messages, userMsg].map(m => ({ role: m.role, content: m.content })),
         geminiApiKey,
         ttsEngine,
-        voiceId: ttsEngine === 'qwen' ? qwenVoiceId : undefined,
+        voiceId: ttsEngine === 'qwen' ? qwenVoiceId : cosyVoiceId,
         dashscopeApiKey
       };
 
@@ -243,14 +238,6 @@ export default function Home() {
       };
 
       setMessages((m) => m.map(msg => msg.id === assistantId ? finalMsg : msg));
-
-      if (ttsEnabled) {
-        setSpeakingId(finalMsg.id);
-        // If Qwen, audio was already streamed. For others, we trigger TTS now.
-        if (ttsEngine !== 'qwen') {
-          safeSpeak(finalMsg.content);
-        }
-      }
     } catch {
       const assistantMsg = {
         id: String(Math.random()),
@@ -265,7 +252,7 @@ export default function Home() {
   }
 
   function speakMessage(msg: any) {
-    if (!cosyEnabled && ttsEngine !== 'qwen') return;
+    if (ttsEngine !== 'cosyvoice' && ttsEngine !== 'qwen') return;
 
     if (speakingId === msg.id) {
       stopSpeak();
@@ -428,8 +415,6 @@ export default function Home() {
         onClose={() => setSettingsOpen(false)}
         ttsEnabled={ttsEnabled}
         setTtsEnabled={setTtsEnabled}
-        cosyEnabled={cosyEnabled}
-        setCosyEnabled={setCosyEnabled}
         ttsEngine={ttsEngine}
         setTtsEngine={setTtsEngine}
         cosyVoiceId={cosyVoiceId}
