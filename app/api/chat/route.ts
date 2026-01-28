@@ -69,13 +69,37 @@ export async function POST(req: NextRequest) {
             parts: [{ text: m.content }]
         }));
 
-        const response = await ai.models.generateContent({
+        const result = await ai.models.generateContentStream({
             model: 'gemini-3-pro-preview',
             config,
             contents: history,
         });
 
-        return NextResponse.json({ text: response.text });
+        const stream = new ReadableStream({
+            async start(controller) {
+                const encoder = new TextEncoder();
+                try {
+                    // Fix: iterate result directly as it appears to be the AsyncGenerator based on lint feedback
+                    for await (const chunk of result) {
+                        const text = chunk.text;
+                        if (text) {
+                            controller.enqueue(encoder.encode(text));
+                        }
+                    }
+                    controller.close();
+                } catch (error) {
+                    console.error('Streaming error:', error);
+                    controller.error(error);
+                }
+            },
+        });
+
+        return new NextResponse(stream, {
+            headers: {
+                'Content-Type': 'text/plain; charset=utf-8',
+            },
+        });
+
     } catch (error: any) {
         console.error('Error generating content:', error);
         return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
