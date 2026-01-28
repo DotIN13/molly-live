@@ -5,4 +5,5 @@ export interface TTSEngine {
     close(): Promise<void>; // cleanup
     onAudio(callback: (data: Uint8Array) => void): void;
     onError(callback: (err: any) => void): void;
+    onFinished(callback: () => void): void;
 }

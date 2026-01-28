@@ -33,10 +33,7 @@ export default function Home() {
   const [cosyEnabled, setCosyEnabled] = usePersistentState("settings.cosyEnabled", false);
   const [ttsEngine, setTtsEngine] = usePersistentState<'cosyvoice' | 'qwen'>("settings.ttsEngine", 'qwen');
 
-  const [streamingEnabled, setStreamingEnabled] = usePersistentState("settings.streamingEnabled", false);
-  const [promptWavPath, setPromptWavPath] = usePersistentState("settings.promptWavPath", "public/resources/cosyvoice/xianzhe_sample.wav");
-  const [promptText, setPromptText] = usePersistentState("settings.promptText", "猜猜我在哪？我听你说话有点卡卡的。你敢不敢往后看看？我说实话。");
-
+  const [cosyVoiceId, setCosyVoiceId] = usePersistentState("settings.cosyVoiceId", "longanyang");
   const [dashscopeApiKey, setDashscopeApiKey] = usePersistentState("settings.dashscopeApiKey", "");
   const [qwenVoiceId, setQwenVoiceId] = usePersistentState("settings.qwenVoiceId", "");
 
@@ -48,12 +45,12 @@ export default function Home() {
 
   async function safeSpeak(text: string) {
     if (cosyEnabled) {
-      if (!promptWavPath || !promptText) {
-        console.warn("CosyVoice enabled but missing prompt wav/text");
+      if (!cosyVoiceId) {
+        console.warn("CosyVoice enabled but missing Voice ID");
         return;
       }
       try {
-        await playAudioStream(text, { engine: 'cosyvoice', promptText, promptWavPath, streaming: streamingEnabled });
+        await playAudioStream(text, { engine: 'cosyvoice', voiceId: cosyVoiceId, streaming: true, dashscopeApiKey });
       } catch (e) {
         console.error("CosyVoice error:", e);
       }
@@ -435,12 +432,8 @@ export default function Home() {
         setCosyEnabled={setCosyEnabled}
         ttsEngine={ttsEngine}
         setTtsEngine={setTtsEngine}
-        streamingEnabled={streamingEnabled}
-        setStreamingEnabled={setStreamingEnabled}
-        promptWavPath={promptWavPath}
-        setPromptWavPath={setPromptWavPath}
-        promptText={promptText}
-        setPromptText={setPromptText}
+        cosyVoiceId={cosyVoiceId}
+        setCosyVoiceId={setCosyVoiceId}
         recognitionLang={recognitionLang}
         setRecognitionLang={setRecognitionLang}
         geminiApiKey={geminiApiKey}

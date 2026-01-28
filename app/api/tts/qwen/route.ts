@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import WebSocket from 'ws';
+import { QwenTTS } from '@/lib/tts-server/qwen-tts';
 
 export async function POST(req: NextRequest) {
     try {
@@ -15,72 +15,33 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Missing ttsText or voiceId' }, { status: 400 });
         }
 
+        const tts = new QwenTTS(apiKey, voiceId);
+
         const stream = new ReadableStream({
-            start(controller) {
-                // Ensure model param is passed in URL as per Qwen requirements
-                const ws = new WebSocket('wss://dashscope.aliyuncs.com/api-ws/v1/realtime?model=qwen3-tts-vc-realtime-2026-01-15', {
-                    headers: {
-                        'Authorization': `Bearer ${apiKey}`
-                    }
+            async start(controller) {
+                tts.onAudio((data) => {
+                    controller.enqueue(data);
                 });
 
-                ws.on('open', () => {
-                    // 1. Session Update
-                    const sessionUpdate = {
-                        type: "session.update",
-                        session: {
-                            mode: "server_commit",
-                            voice: voiceId,
-                            // model removed here as it is in the URL query param
-                            response_format: "pcm",
-                            sample_rate: 24000
-                        }
-                    };
-                    ws.send(JSON.stringify(sessionUpdate));
-
-                    // 2. Append Text
-                    const appendText = {
-                        type: "input_text_buffer.append",
-                        text: ttsText
-                    };
-                    ws.send(JSON.stringify(appendText));
-
-                    // 3. Finish Session
-                    const finishSession = {
-                        type: "session.finish"
-                    };
-                    ws.send(JSON.stringify(finishSession));
-                });
-
-                ws.on('message', (data: any, isBinary: boolean) => {
-                    try {
-                        if (isBinary) return;
-                        const msg = JSON.parse(data.toString());
-
-                        if (msg.type === 'response.audio.delta') {
-                            const audioData = Buffer.from(msg.delta, 'base64');
-                            controller.enqueue(audioData);
-                        } else if (msg.type === 'session.finished') {
-                            ws.close();
-                            controller.close();
-                        } else if (msg.type === 'error') {
-                            console.error('Qwen TTS Error:', msg);
-                            controller.error(new Error(msg.error?.message || 'Unknown Qwen TTS Error'));
-                            ws.close();
-                        }
-                    } catch (e) {
-                        console.error('Error parsing WebSocket message:', e);
-                    }
-                });
-
-                ws.on('error', (err: any) => {
-                    console.error('WebSocket Error:', err);
+                tts.onError((err) => {
+                    console.error('Qwen TTS Error:', err);
                     controller.error(err);
                 });
 
-                ws.on('close', () => {
-                    try { controller.close(); } catch (e) { }
+                tts.onFinished(() => {
+                    controller.close();
                 });
+
+                try {
+                    await tts.initialize();
+                    await tts.sendText(ttsText);
+                    await tts.flush();
+                } catch (error) {
+                    controller.error(error);
+                }
+            },
+            cancel() {
+                tts.close();
             }
         });
 

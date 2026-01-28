@@ -6,6 +6,7 @@ export class QwenTTS implements TTSEngine {
     private ws: WebSocket | null = null;
     private audioCallback: ((data: Uint8Array) => void) | null = null;
     private errorCallback: ((err: any) => void) | null = null;
+    private finishedCallback: (() => void) | null = null;
     private apiKey: string | undefined;
     private voiceId: string;
     private ready: boolean = false;
@@ -22,6 +23,10 @@ export class QwenTTS implements TTSEngine {
 
     onError(callback: (err: any) => void): void {
         this.errorCallback = callback;
+    }
+
+    onFinished(callback: () => void): void {
+        this.finishedCallback = callback;
     }
 
     async initialize(): Promise<void> {
@@ -64,6 +69,7 @@ export class QwenTTS implements TTSEngine {
                             this.audioCallback(new Uint8Array(audioData));
                         }
                     } else if (msg.type === 'session.finished') {
+                        if (this.finishedCallback) this.finishedCallback();
                         this.ws?.close();
                     } else if (msg.type === 'error') {
                         console.error('Qwen TTS Error:', msg);

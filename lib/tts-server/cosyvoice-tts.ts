@@ -7,6 +7,7 @@ export class CosyVoiceTTS implements TTSEngine {
     private ws: WebSocket | null = null;
     private audioCallback: ((data: Uint8Array) => void) | null = null;
     private errorCallback: ((err: any) => void) | null = null;
+    private finishedCallback: (() => void) | null = null;
     private apiKey: string | undefined;
     private voiceId: string;
     private taskId: string;
@@ -26,6 +27,10 @@ export class CosyVoiceTTS implements TTSEngine {
 
     onError(callback: (err: any) => void): void {
         this.errorCallback = callback;
+    }
+
+    onFinished(callback: () => void): void {
+        this.finishedCallback = callback;
     }
 
     async initialize(): Promise<void> {
@@ -92,6 +97,7 @@ export class CosyVoiceTTS implements TTSEngine {
                         this.taskStarted = true;
                         resolve();
                     } else if (event === 'task-finished') {
+                        if (this.finishedCallback) this.finishedCallback();
                         this.ws?.close();
                     } else if (event === 'task-failed') {
                         const errMsg = msg.header?.error_message || "Unknown error";

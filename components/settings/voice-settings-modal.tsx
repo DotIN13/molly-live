@@ -19,12 +19,8 @@ export function VoiceSettingsModal({
     setTtsEnabled,
     cosyEnabled,
     setCosyEnabled,
-    streamingEnabled,
-    setStreamingEnabled,
-    promptWavPath,
-    setPromptWavPath,
-    promptText,
-    setPromptText,
+    cosyVoiceId,
+    setCosyVoiceId,
     ttsEngine,
     setTtsEngine,
     recognitionLang,
@@ -42,12 +38,8 @@ export function VoiceSettingsModal({
     setTtsEnabled: (v: boolean) => void;
     cosyEnabled: boolean;
     setCosyEnabled: (v: boolean) => void;
-    streamingEnabled: boolean;
-    setStreamingEnabled: (v: boolean) => void;
-    promptWavPath: string;
-    setPromptWavPath: (v: string) => void;
-    promptText: string;
-    setPromptText: (v: string) => void;
+    cosyVoiceId: string;
+    setCosyVoiceId: (v: string) => void;
     ttsEngine: 'cosyvoice' | 'qwen';
     setTtsEngine: (v: 'cosyvoice' | 'qwen') => void;
     recognitionLang: string;
@@ -233,25 +225,23 @@ export function VoiceSettingsModal({
                                     {/* CosyVoice Settings */}
                                     {cosyEnabled && (
                                         <div className="space-y-3 pt-2">
-                                            <div className="flex items-center justify-between">
-                                                <div className="text-xs text-muted-foreground">Stream Response</div>
-                                                <Switch checked={streamingEnabled} onCheckedChange={setStreamingEnabled} className="scale-75" />
-                                            </div>
                                             <div className="space-y-1">
-                                                <div className="text-xs text-muted-foreground">Prompt WAV Path</div>
+                                                <div className="text-xs text-muted-foreground">DashScope API Key</div>
                                                 <Input
-                                                    value={promptWavPath}
-                                                    onChange={e => setPromptWavPath(e.target.value)}
-                                                    placeholder="Absolute path to .wav"
-                                                    className="h-8 text-xs"
+                                                    value={dashscopeApiKey}
+                                                    onChange={e => setDashscopeApiKey(e.target.value)}
+                                                    placeholder="Leave empty to use server settings"
+                                                    type="password"
+                                                    autoComplete="new-password"
+                                                    className="h-8 text-xs font-mono"
                                                 />
                                             </div>
                                             <div className="space-y-1">
-                                                <div className="text-xs text-muted-foreground">Prompt Text</div>
+                                                <div className="text-xs text-muted-foreground">Voice ID</div>
                                                 <Input
-                                                    value={promptText}
-                                                    onChange={e => setPromptText(e.target.value)}
-                                                    placeholder="Text content of the WAV"
+                                                    value={cosyVoiceId}
+                                                    onChange={e => setCosyVoiceId(e.target.value)}
+                                                    placeholder="longanyang"
                                                     className="h-8 text-xs"
                                                 />
                                             </div>
@@ -315,9 +305,9 @@ export function VoiceSettingsModal({
                                                 if (cosyEnabled) {
                                                     playAudioStream("Hi, I’m Molly.", {
                                                         engine: 'cosyvoice',
-                                                        promptText,
-                                                        promptWavPath,
-                                                        streaming: streamingEnabled
+                                                        voiceId: cosyVoiceId,
+                                                        streaming: true,
+                                                        dashscopeApiKey
                                                     }).catch(err => console.error(err));
                                                 } else if (ttsEngine === 'qwen') {
                                                     playAudioStream("Hi, I’m Molly. Checking my voice.", {
@@ -328,7 +318,7 @@ export function VoiceSettingsModal({
                                                     }).catch(err => console.error(err));
                                                 }
                                             }}
-                                            disabled={(cosyEnabled && (!promptWavPath || !promptText)) || (ttsEngine === 'qwen' && (!qwenVoiceId || !dashscopeApiKey))}
+                                            disabled={(cosyEnabled && (!cosyVoiceId || !dashscopeApiKey)) || (ttsEngine === 'qwen' && (!qwenVoiceId || !dashscopeApiKey))}
                                         >
                                             <Volume2 className="mr-2 h-4 w-4" />
                                             Preview
