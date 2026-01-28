@@ -1,14 +1,13 @@
-import { streamingPlayer, stopAudioPlayback, COSY_SAMPLE_RATE, CARTESIA_SAMPLE_RATE } from "@/lib/audio-player";
+import { streamingPlayer, stopAudioPlayback, COSY_SAMPLE_RATE } from "@/lib/audio-player";
 
 export async function playAudioStream(
     text: string,
     options: {
-        engine: 'cosyvoice' | 'cartesia' | 'qwen',
+        engine: 'cosyvoice' | 'qwen',
         promptText?: string,
         promptWavPath?: string,
         voiceId?: string,
         streaming: boolean,
-        cartesiaApiKey?: string,
         dashscopeApiKey?: string
     }
 ) {
@@ -18,7 +17,6 @@ export async function playAudioStream(
     try {
         let endpoint = '/api/tts';
         if (options.engine === 'cosyvoice') endpoint = '/api/tts/cosyvoice';
-        else if (options.engine === 'cartesia') endpoint = '/api/tts/cartesia';
         else if (options.engine === 'qwen') endpoint = '/api/tts/qwen';
 
         const response = await fetch(endpoint, {
@@ -40,9 +38,9 @@ export async function playAudioStream(
         const sampleRateHeader = response.headers.get('X-Sample-Rate');
         const audioFormatHeader = response.headers.get('X-Audio-Format');
 
-        const sampleRate = sampleRateHeader ? parseInt(sampleRateHeader, 10) : (options.engine === 'cartesia' ? CARTESIA_SAMPLE_RATE : COSY_SAMPLE_RATE);
-        // If format is specified in header, use it. Cartesian is float32. Cosy/Qwen usually int16 (unless float32 specified).
-        const audioFormat = (audioFormatHeader === 'pcm_f32le' || options.engine === 'cartesia') ? 'float32' : 'int16';
+        const sampleRate = sampleRateHeader ? parseInt(sampleRateHeader, 10) : COSY_SAMPLE_RATE;
+        // If format is specified in header, use it. Cosy/Qwen usually int16 (unless float32 specified).
+        const audioFormat = (audioFormatHeader === 'pcm_f32le') ? 'float32' : 'int16';
 
         let leftover = new Uint8Array(0);
 

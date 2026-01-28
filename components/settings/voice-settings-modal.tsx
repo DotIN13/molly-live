@@ -27,12 +27,8 @@ export function VoiceSettingsModal({
     setPromptText,
     ttsEngine,
     setTtsEngine,
-    cartesiaVoiceId,
-    setCartesiaVoiceId,
     recognitionLang,
     setRecognitionLang,
-    cartesiaApiKey,
-    setCartesiaApiKey,
     geminiApiKey,
     setGeminiApiKey,
     dashscopeApiKey,
@@ -52,16 +48,12 @@ export function VoiceSettingsModal({
     setPromptWavPath: (v: string) => void;
     promptText: string;
     setPromptText: (v: string) => void;
-    ttsEngine: 'cosyvoice' | 'cartesia' | 'qwen';
-    setTtsEngine: (v: 'cosyvoice' | 'cartesia' | 'qwen') => void;
-    cartesiaVoiceId: string;
-    setCartesiaVoiceId: (v: string) => void;
+    ttsEngine: 'cosyvoice' | 'qwen';
+    setTtsEngine: (v: 'cosyvoice' | 'qwen') => void;
     recognitionLang: string;
     setRecognitionLang: (v: string) => void;
     geminiApiKey: string;
     setGeminiApiKey: (v: string) => void;
-    cartesiaApiKey: string;
-    setCartesiaApiKey: (v: string) => void;
     dashscopeApiKey: string;
     setDashscopeApiKey: (v: string) => void;
     qwenVoiceId: string;
@@ -229,14 +221,6 @@ export function VoiceSettingsModal({
                                             CosyVoice
                                         </Button>
                                         <Button
-                                            variant={ttsEngine === 'cartesia' && !cosyEnabled ? "default" : "outline"}
-                                            size="sm"
-                                            onClick={() => { setCosyEnabled(false); setTtsEngine('cartesia'); }}
-                                            className="flex-1 rounded-xl text-xs"
-                                        >
-                                            Cartesia
-                                        </Button>
-                                        <Button
                                             variant={ttsEngine === 'qwen' && !cosyEnabled ? "default" : "outline"}
                                             size="sm"
                                             onClick={() => { setCosyEnabled(false); setTtsEngine('qwen'); }}
@@ -274,35 +258,6 @@ export function VoiceSettingsModal({
                                         </div>
                                     )}
 
-                                    {/* Cartesia Settings */}
-                                    {ttsEngine === 'cartesia' && !cosyEnabled && (
-                                        <div className="space-y-3 pt-2">
-                                            <div className="flex items-center justify-between">
-                                                <div className="text-xs text-muted-foreground">Stream Response</div>
-                                                <Switch checked={streamingEnabled} onCheckedChange={setStreamingEnabled} className="scale-75" />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <div className="text-xs text-muted-foreground">Cartesia API Key</div>
-                                                <Input
-                                                    value={cartesiaApiKey}
-                                                    onChange={e => setCartesiaApiKey(e.target.value)}
-                                                    placeholder="Leave empty to use server settings"
-                                                    type="password"
-                                                    autoComplete="new-password"
-                                                    className="h-8 text-xs font-mono"
-                                                />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <div className="text-xs text-muted-foreground">Voice ID</div>
-                                                <Input
-                                                    value={cartesiaVoiceId}
-                                                    onChange={e => setCartesiaVoiceId(e.target.value)}
-                                                    placeholder="UUID"
-                                                    className="h-8 text-xs font-mono"
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
 
                                     {/* Qwen Settings */}
                                     {ttsEngine === 'qwen' && !cosyEnabled && (
@@ -371,16 +326,9 @@ export function VoiceSettingsModal({
                                                         streaming: true,
                                                         dashscopeApiKey
                                                     }).catch(err => console.error(err));
-                                                } else if (ttsEngine === 'cartesia') {
-                                                    playAudioStream("Hi, I’m Molly. Checking my voice.", {
-                                                        engine: 'cartesia',
-                                                        voiceId: cartesiaVoiceId,
-                                                        streaming: streamingEnabled,
-                                                        cartesiaApiKey
-                                                    }).catch(err => console.error(err));
                                                 }
                                             }}
-                                            disabled={(cosyEnabled && (!promptWavPath || !promptText)) || (ttsEngine === 'cartesia' && !cartesiaVoiceId) || (ttsEngine === 'qwen' && (!qwenVoiceId || !dashscopeApiKey))}
+                                            disabled={(cosyEnabled && (!promptWavPath || !promptText)) || (ttsEngine === 'qwen' && (!qwenVoiceId || !dashscopeApiKey))}
                                         >
                                             <Volume2 className="mr-2 h-4 w-4" />
                                             Preview

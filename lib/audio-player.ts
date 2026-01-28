@@ -1,5 +1,4 @@
 export const COSY_SAMPLE_RATE = 24000;
-export const CARTESIA_SAMPLE_RATE = 44100;
 
 export class StreamingAudioPlayer {
     private audioContext: AudioContext | null = null;

@@ -31,8 +31,7 @@ export default function Home() {
   // Legacy TTS state removed (rate, pitch, volume, voiceURI, voices)
 
   const [cosyEnabled, setCosyEnabled] = usePersistentState("settings.cosyEnabled", false);
-  const [ttsEngine, setTtsEngine] = usePersistentState<'cosyvoice' | 'cartesia' | 'qwen'>("settings.ttsEngine", 'cartesia');
-  const [cartesiaVoiceId, setCartesiaVoiceId] = usePersistentState("settings.cartesiaVoiceId", "78386a09-04ef-484d-9b9d-efd13087b792");
+  const [ttsEngine, setTtsEngine] = usePersistentState<'cosyvoice' | 'qwen'>("settings.ttsEngine", 'qwen');
 
   const [streamingEnabled, setStreamingEnabled] = usePersistentState("settings.streamingEnabled", false);
   const [promptWavPath, setPromptWavPath] = usePersistentState("settings.promptWavPath", "public/resources/cosyvoice/xianzhe_sample.wav");
@@ -46,7 +45,6 @@ export default function Home() {
     typeof navigator !== "undefined" ? navigator.language : "en-US"
   );
   const [geminiApiKey, setGeminiApiKey] = usePersistentState("settings.geminiApiKey", "");
-  const [cartesiaApiKey, setCartesiaApiKey] = usePersistentState("settings.cartesiaApiKey", "");
 
   async function safeSpeak(text: string) {
     if (cosyEnabled) {
@@ -62,15 +60,6 @@ export default function Home() {
       return;
     }
 
-    if (ttsEngine === 'cartesia') {
-      if (!cartesiaVoiceId) return;
-      try {
-        await playAudioStream(text, { engine: 'cartesia', voiceId: cartesiaVoiceId, streaming: streamingEnabled, cartesiaApiKey });
-      } catch (e) {
-        console.error("Cartesia error:", e);
-      }
-      return;
-    }
 
     if (ttsEngine === 'qwen') {
       if (!dashscopeApiKey || !qwenVoiceId) {
@@ -279,7 +268,7 @@ export default function Home() {
   }
 
   function speakMessage(msg: any) {
-    if (!cosyEnabled && ttsEngine !== 'cartesia' && ttsEngine !== 'qwen') return;
+    if (!cosyEnabled && ttsEngine !== 'qwen') return;
 
     if (speakingId === msg.id) {
       stopSpeak();
@@ -446,8 +435,6 @@ export default function Home() {
         setCosyEnabled={setCosyEnabled}
         ttsEngine={ttsEngine}
         setTtsEngine={setTtsEngine}
-        cartesiaVoiceId={cartesiaVoiceId}
-        setCartesiaVoiceId={setCartesiaVoiceId}
         streamingEnabled={streamingEnabled}
         setStreamingEnabled={setStreamingEnabled}
         promptWavPath={promptWavPath}
@@ -458,8 +445,6 @@ export default function Home() {
         setRecognitionLang={setRecognitionLang}
         geminiApiKey={geminiApiKey}
         setGeminiApiKey={setGeminiApiKey}
-        cartesiaApiKey={cartesiaApiKey}
-        setCartesiaApiKey={setCartesiaApiKey}
         dashscopeApiKey={dashscopeApiKey}
         setDashscopeApiKey={setDashscopeApiKey}
         qwenVoiceId={qwenVoiceId}
