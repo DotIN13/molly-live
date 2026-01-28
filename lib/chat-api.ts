@@ -76,17 +76,28 @@ export async function playAudioStream(
 export async function sendToBackend({
     messages,
     geminiApiKey,
-    onStream
+    onStream,
+    ttsEngine,
+    voiceId,
+    dashscopeApiKey
 }: {
     messages: Array<{ role: string; content: string }>;
     geminiApiKey?: string;
     onStream?: (text: string) => void;
+    ttsEngine?: string;
+    voiceId?: string;
+    dashscopeApiKey?: string;
 }) {
+    if (ttsEngine === 'qwen') {
+        stopAudioPlayback();
+        await streamingPlayer.resume();
+    }
+
     try {
         const response = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages, geminiApiKey })
+            body: JSON.stringify({ messages, geminiApiKey, ttsEngine, voiceId, dashscopeApiKey })
         });
 
         if (!response.ok) {
@@ -96,15 +107,64 @@ export async function sendToBackend({
         if (!response.body) throw new Error("No response body");
 
         const reader = response.body.getReader();
+        const contentType = response.headers.get('Content-Type');
         const decoder = new TextDecoder();
         let fullText = "";
 
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            const chunk = decoder.decode(value, { stream: true });
-            fullText += chunk;
-            onStream?.(fullText);
+        if (contentType?.includes('application/octet-stream') || response.headers.get('X-Stream-Protocol') === 'mixed-v1') {
+            // Mixed binary protocol: [Type(1)][Length(4)][Payload]
+            let buffer = new Uint8Array(0);
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                // Append new data to buffer
+                const temp = new Uint8Array(buffer.length + value.length);
+                temp.set(buffer);
+                temp.set(value, buffer.length);
+                buffer = temp;
+
+                // Process buffer
+                let offset = 0;
+                while (offset + 5 <= buffer.length) {
+                    const type = buffer[offset];
+                    const length = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength).getUint32(offset + 1, false);
+
+                    if (offset + 5 + length > buffer.length) {
+                        // Not enough data for full packet
+                        break;
+                    }
+
+                    const payload = buffer.slice(offset + 5, offset + 5 + length);
+                    offset += 5 + length;
+
+                    if (type === 1) { // Text
+                        const textChunk = decoder.decode(payload);
+                        fullText += textChunk;
+                        onStream?.(fullText);
+                    } else if (type === 2) { // Audio
+                        // Qwen is 24kHz, 16-bit PCM
+                        const sampleRate = 24000;
+                        const audioFormat = 'int16';
+                        streamingPlayer.scheduleChunk(payload.buffer, sampleRate, audioFormat);
+                    }
+                }
+
+                if (offset > 0) {
+                    buffer = buffer.slice(offset);
+                }
+            }
+
+        } else {
+            // Standard text stream
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                const chunk = decoder.decode(value, { stream: true });
+                fullText += chunk;
+                onStream?.(fullText);
+            }
         }
 
         return { text: fullText, tag: "Reply" };

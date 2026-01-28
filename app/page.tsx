@@ -219,7 +219,10 @@ export default function Home() {
     try {
       const payload = {
         messages: [...messages, userMsg].map(m => ({ role: m.role, content: m.content })),
-        geminiApiKey
+        geminiApiKey,
+        ttsEngine,
+        voiceId: ttsEngine === 'qwen' ? qwenVoiceId : undefined,
+        dashscopeApiKey
       };
 
       // Create placeholder message
@@ -257,7 +260,10 @@ export default function Home() {
 
       if (ttsEnabled) {
         setSpeakingId(finalMsg.id);
-        safeSpeak(finalMsg.content);
+        // If Qwen, audio was already streamed. For others, we trigger TTS now.
+        if (ttsEngine !== 'qwen') {
+          safeSpeak(finalMsg.content);
+        }
       }
     } catch {
       const assistantMsg = {
